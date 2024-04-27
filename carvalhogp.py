@@ -1,3 +1,4 @@
+import concurrent.futures
 import math
 import random
 import operator
@@ -13,7 +14,7 @@ pop_size = 300
 num_genes = 4
 terminals = ['x']
 minInitDepth = 2
-maxInitDepth = 50
+maxInitDepth = 5
 max_global_depth = 8
 max_crossover_growth = 3
 max_mutation_growth = 3
@@ -21,20 +22,19 @@ mutation_rate = 0.2
 crossover_rate = 0.9
 num_generations = 50
 elitism_size = 1
-new_data_points = [{'x': -0.2}, {'x': 0.5}, {'x': 0.7}]
-def main(seed=7246325):
-    random.seed(seed)
 
-    def add(*args):
-        return sum(args)
 
-    def protected_division(x, y):
-        if y == 0:
-            return 1
-        return x / y
+#new_data_points = [{'x': -0.2}, {'x': 0.5}, {'x': 0.7}]
 
-    # Add the arity of the operator
-    ops = {
+def add(*args):
+    return sum(args)
+
+def protected_division(x, y):
+    if y == 0:
+        return 1
+    return x / y
+
+ops = {
         'add': add,
         'sub': operator.sub,
         'mul': operator.mul,
@@ -42,8 +42,8 @@ def main(seed=7246325):
         'sin': math.sin,
         'cos': math.cos,
         'tan': math.tan,
-    }
-    arity = {
+}
+arity = {
         'add': 2,
         'sub': 2,
         'mul': 2,
@@ -51,72 +51,73 @@ def main(seed=7246325):
         'sin': 1,
         'cos': 1,
         'tan': 1,
-    }
+}
 
-    def terminal_or_ephemeral(terminals):
-        total_options = len(terminals) + 1
-        ephemeral_chance = 1 / total_options
-        if random.random() < ephemeral_chance:
-            return random.uniform(-1, 1)
+def terminal_or_ephemeral(terminals):
+    total_options = len(terminals) + 1
+    ephemeral_chance = 1 / total_options
+    if random.random() < ephemeral_chance:
+        return random.uniform(-1, 1)
+    else:
+        return random.choice(terminals)
+def generate_tree(terminals, max_global_depth, current_depth=0, min_depth=minInitDepth):
+    if current_depth >= max_global_depth or (current_depth >= min_depth and random.random() < 0.5):
+        return Node(terminal_or_ephemeral(terminals))
+    else:
+        op = random.choice(list(ops.keys()))
+        ar = arity[op]
+        children = [generate_tree(terminals, max_global_depth, current_depth + 1, min_depth) for _ in range(ar)]
+        return Node(op, children)
+class Node:
+    def __init__(self, value, children=None):
+        self.value = value
+        self.children = children if children else []
+
+    def depth(self):
+        if not self.children:
+            return 1
+        return 1 + max(child.depth() for child in self.children)
+
+    def mutate(self, terminals, max_global_depth, max_mutation_growth):
+        if self.depth() >= max_global_depth - max_mutation_growth:
+            return self  # Prevent depth exceeding max_global_depth after mutation
+        new_subtree = generate_tree(terminals, max_global_depth, min_depth=0, current_depth=self.depth())
+        self.value = new_subtree.value
+        self.children = new_subtree.children
+        return self
+
+    def crossover(self, other, point, max_global_depth, max_crossover_growth, current_depth=1):
+        if current_depth >= max_global_depth - max_crossover_growth:
+            return self, other  # Prevent depth exceeding max_global_depth after crossover
+        if point == current_depth:
+            return other.copy(), self.copy()
         else:
-            return random.choice(terminals)
+            for i in range(min(len(self.children), len(other.children))):
+                self.children[i], other.children[i] = self.children[i].crossover(other.children[i], point,
+                                                                                 max_global_depth,
+                                                                                 max_crossover_growth,
+                                                                                 current_depth + 1)
+        return self, other
 
-    class Node:
-        def __init__(self, value, children=None):
-            self.value = value
-            self.children = children if children else []
+    def copy(self):
+        return Node(self.value, [child.copy() for child in self.children])
 
-        def depth(self):
-            if not self.children:
-                return 1
-            return 1 + max(child.depth() for child in self.children)
-
-        def mutate(self, terminals, max_global_depth, max_mutation_growth):
-            if self.depth() >= max_global_depth - max_mutation_growth:
-                return self  # Prevent depth exceeding max_global_depth after mutation
-            new_subtree = generate_tree(terminals, max_global_depth, min_depth=0, current_depth=self.depth())
-            self.value = new_subtree.value
-            self.children = new_subtree.children
-            return self
-
-        def crossover(self, other, point, max_global_depth, max_crossover_growth, current_depth=1):
-            if current_depth >= max_global_depth - max_crossover_growth:
-                return self, other  # Prevent depth exceeding max_global_depth after crossover
-            if point == current_depth:
-                return other.copy(), self.copy()
-            else:
-                for i in range(min(len(self.children), len(other.children))):
-                    self.children[i], other.children[i] = self.children[i].crossover(other.children[i], point,
-                                                                                     max_global_depth,
-                                                                                     max_crossover_growth,
-                                                                                     current_depth + 1)
-            return self, other
-
-        def copy(self):
-            return Node(self.value, [child.copy() for child in self.children])
-
-        def evaluate(self, mapping):
-            if self.value in ops:
-                results = [child.evaluate(mapping) for child in self.children]
-                return ops[self.value](*results)
-            elif self.value in mapping:
-                return mapping[self.value]
-            else:
-                return self.value
-
-        def __str__(self):
-            if self.children:
-                return f"{self.value}({', '.join(str(child) for child in self.children)})"
-            return str(self.value)
-
-    def generate_tree(terminals, max_global_depth, current_depth=0, min_depth=minInitDepth):
-        if current_depth >= max_global_depth or (current_depth >= min_depth and random.random() < 0.5):
-            return Node(terminal_or_ephemeral(terminals))
+    def evaluate(self, mapping):
+        if self.value in ops:
+            results = [child.evaluate(mapping) for child in self.children]
+            return ops[self.value](*results)
+        elif self.value in mapping:
+            return mapping[self.value]
         else:
-            op = random.choice(list(ops.keys()))
-            ar = arity[op]
-            children = [generate_tree(terminals, max_global_depth, current_depth + 1, min_depth) for _ in range(ar)]
-            return Node(op, children)
+            return self.value
+
+    def __str__(self):
+        if self.children:
+            return f"{self.value}({', '.join(str(child) for child in self.children)})"
+        return str(self.value)
+def main(seed=7246325):
+    random.seed(seed)
+    np.random.seed(seed)
 
     def one_point_crossover(parent1, parent2, max_global_depth, max_crossover_growth):
         offspring1 = []
@@ -262,11 +263,58 @@ def main(seed=7246325):
         f"Best individual found in {formatted_time} - Generation {best_generation} with Fitness = {best_fitness_global}, index = {best_index}")
     # print(predict_output(best_model_global, best_individual_global, new_data_points))
     return [genAvgs, genMins, genMaxs, genMeds], best_individual_global, best_model_global
-test, best_individual, best_model = main()
-print(f"y = {best_model.intercept_}")
-for coef, individual in zip(best_model.coef_, best_individual):
-    if coef < 0:
-        print(f" - {-coef}", end="")
-    else:
-        print(f" + {coef}", end="")
-    print(f" * {individual}")
+
+
+if __name__ == '__main__':
+    random.seed(7246325)
+    seeds = [random.randint(0, 100000000) for _ in range(10)]
+
+    # Create a ProcessPoolExecutor
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        # Use map to execute main() function for each seed and maintain order
+        all_results = list(executor.map(main, seeds))
+    # Process or utilize the collected results as needed
+    for result in all_results:
+        print(f"Stats (genAvg, genMin, genMax, genMed): {result[0]}")
+        print(f"y = {result[2].intercept_}")
+        for gene, coef in zip(result[1], result[2].coef_):
+            if coef < 0:
+                print(f" - {-coef}", end="")
+            else:
+                print(f" + {coef}", end="")
+            print(f" * {gene}")
+    # Plotting the average results
+    grandAvg = []
+    grandMin = []
+    grandMax = []
+    grandMed = []
+    for gen in range(num_generations):
+        grandAvg.append(np.mean([result[0][0][gen] for result in all_results]))
+        grandMin.append(np.mean([result[0][1][gen] for result in all_results]))
+        grandMax.append(np.mean([result[0][2][gen] for result in all_results]))
+        grandMed.append(np.mean([result[0][3][gen] for result in all_results]))
+    plt.plot(range(1, num_generations + 1), grandAvg, label='Average')
+    plt.xlabel('Generation')
+    plt.ylabel('Fitness')
+    plt.title('Average Fitness over Generations')
+    plt.legend()
+    plt.savefig('plots/average_fitness_plot.png')
+    plt.close()
+
+    # Plotting the minimum results
+    plt.plot(range(1, num_generations + 1), grandMin, label='Minimum')
+    plt.xlabel('Generation')
+    plt.ylabel('Fitness')
+    plt.title('Minimum Fitness over Generations')
+    plt.legend()
+    plt.savefig('plots/minimum_fitness_plot.png')
+    plt.close()
+
+    # Plotting the median results
+    plt.plot(range(1, num_generations + 1), grandMed, label='Median')
+    plt.xlabel('Generation')
+    plt.ylabel('Fitness')
+    plt.title('Median Fitness over Generations')
+    plt.legend()
+    plt.savefig('plots/median_fitness_plot.png')
+    plt.close()
