@@ -172,7 +172,7 @@ def main(seed=7246325):
                                                key=lambda x: multi_gene_fitness(x[0], data_points)[0])
 
         elites_with_models = sorted_population_with_models[:elitism_size]
-        elites = [elite[0] for elite in
+        elites = [copy.deepcopy(elite[0]) for elite in
                   elites_with_models]
         new_population.extend(elites)
 
@@ -187,7 +187,7 @@ def main(seed=7246325):
                 new_population.append(individual)
 
         for i in range(len(new_population)):
-            if random.random() < mutation_rate:
+            if random.random() < mutation_rate and i >= elitism_size:
                 new_population[i] = mutate(new_population[i], terminals, max_depth, max_mutation_growth=max_mutation_growth)
 
         new_population_with_models = [(ind, multi_gene_fitness(ind, data_points)[1]) for ind in new_population]
@@ -215,8 +215,6 @@ def main(seed=7246325):
 
     data_points = [{'x': x, 'actual': target_function(x)} for x in to_compute]
 
-    population = initialize_population(pop_size, num_genes, terminals, maxInitDepth)
-
     best_fitness_global = float('inf')
     best_individual_global = None
     best_model_global = None
@@ -224,10 +222,28 @@ def main(seed=7246325):
     best_index = -1
 
     start_time = time.time()
+    genFitness = []
     genAvgs = []
     genMins = []
     genMaxs = []
     genMeds = []
+    population = initialize_population(pop_size, num_genes, terminals, maxInitDepth)
+    for individual in population:
+        idv = individual
+        fitness, model = multi_gene_fitness(individual,
+                                            data_points)  # Ensure this should be multi_gene_fitness_torch if using GPU
+        genFitness.append(fitness)
+        if fitness < best_fitness_global:
+            best_fitness_global = fitness
+            best_individual_global = copy.deepcopy(idv)
+            best_model_global = model
+            best_index = population.index(individual)
+    genAvgs.append(np.mean(genFitness))
+    genMins.append(np.min(genFitness))
+    genMaxs.append(np.max(genFitness))
+    genMeds.append(np.median(genFitness))
+
+    print(f"Generation 0: Best Fitness = {best_fitness_global}")
     for gen in range(num_generations):
         genFitness = []
         population = evolve_population(population, data_points, terminals, max_global_depth, mutation_rate, elitism_size,
@@ -288,12 +304,12 @@ if __name__ == '__main__':
     grandMin = []
     grandMax = []
     grandMed = []
-    for gen in range(num_generations):
+    for gen in range(num_generations+1):
         grandAvg.append(np.mean([result[0][0][gen] for result in all_results]))
         grandMin.append(np.mean([result[0][1][gen] for result in all_results]))
         grandMax.append(np.mean([result[0][2][gen] for result in all_results]))
         grandMed.append(np.mean([result[0][3][gen] for result in all_results]))
-    plt.plot(range(1, num_generations + 1), grandAvg, label='Average')
+    plt.plot(range(0, num_generations + 1), grandAvg, label='Average')
     plt.xlabel('Generation')
     plt.ylabel('Fitness')
     plt.title('Average Fitness over Generations')
@@ -302,7 +318,7 @@ if __name__ == '__main__':
     plt.close()
 
     # Plotting the minimum results
-    plt.plot(range(1, num_generations + 1), grandMin, label='Minimum')
+    plt.plot(range(0, num_generations + 1), grandMin, label='Minimum')
     plt.xlabel('Generation')
     plt.ylabel('Fitness')
     plt.title('Minimum Fitness over Generations')
@@ -311,7 +327,7 @@ if __name__ == '__main__':
     plt.close()
 
     # Plotting the median results
-    plt.plot(range(1, num_generations + 1), grandMed, label='Median')
+    plt.plot(range(0, num_generations + 1), grandMed, label='Median')
     plt.xlabel('Generation')
     plt.ylabel('Fitness')
     plt.title('Median Fitness over Generations')
