@@ -10,15 +10,15 @@ import time
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('TkAgg')
-pop_size = 500
+pop_size = 400
 num_genes = 5
 terminals = ['Area','Perimeter','Major_Axis_Length','Minor_Axis_Length','Eccentricity','Convex_Area','Extent']
 minInitDepth = 2
 maxInitDepth = 3
-max_global_depth = 6
+max_global_depth = 4
 max_crossover_growth = 2
 max_mutation_growth = 2
-mutation_rate = 0.25
+mutation_rate = 0.3
 crossover_rate = 0.9
 num_generations = 50
 elitism_size = 1
@@ -175,49 +175,48 @@ def main(seed=7246325):
                 best_individual = individual
         return best_individual
 
-    def evolve_population(population, data_points, terminals, max_depth, mutation_rate, elitism_size, crossover_rate):
+    def tournament_selection2(population_with_fit_and_models, tournament_size=3):
+        tournament = random.sample(population_with_fit_and_models, tournament_size)
+        best_fitness = float('inf')
+        best_individual = None
+        for individual in tournament:
+            fitness = individual[1]
+            if fitness < best_fitness:
+                best_fitness = fitness
+                best_individual = individual
+        return best_individual[0]
+
+    def evolve_population(population, terminals, max_depth, mutation_rate, elitism_size, crossover_rate):
         new_population = []
+        population_with_fit_and_models = population
 
-        population_with_models = [(ind, multi_gene_fitness(ind, data_points)[1]) for ind in population]
+        sorted_population_with_fit_and_models = sorted(population_with_fit_and_models, key=lambda x: x[1])
 
-        sorted_population_with_models = sorted(population_with_models,
-                                               key=lambda x: multi_gene_fitness(x[0], data_points)[0])
-
-        elites_with_models = sorted_population_with_models[:elitism_size]
+        elites_with_fit_and_models = sorted_population_with_fit_and_models[:elitism_size]
         elites = [copy.deepcopy(elite[0]) for elite in
-                  elites_with_models]
+                  elites_with_fit_and_models]
         new_population.extend(elites)
 
         while len(new_population) < len(population):
             if random.random() < crossover_rate:
-                parent1 = tournament_selection(population, data_points)
-                parent2 = tournament_selection(population, data_points)
-                offspring1, offspring2 = one_point_crossover(parent1, parent2, max_global_depth, max_crossover_growth)
+                parent1 = tournament_selection2(population_with_fit_and_models)
+                parent2 = tournament_selection2(population_with_fit_and_models)
+                offspring1, offspring2 = one_point_crossover(parent1, parent2, max_depth, max_crossover_growth)
                 new_population.extend([offspring1, offspring2][:len(population) - len(new_population)])
             else:
-                individual = tournament_selection(population, data_points)
+                individual = tournament_selection2(population_with_fit_and_models)
                 new_population.append(individual)
 
         for i in range(len(new_population)):
             if random.random() < mutation_rate and i >= elitism_size:
-                new_population[i] = mutate(new_population[i], terminals, max_depth, max_mutation_growth=max_mutation_growth)
-
-        new_population_with_models = [(ind, multi_gene_fitness(ind, data_points)[1]) for ind in new_population]
-
-        return [ind[0] for ind in new_population_with_models]
-
-    def predict_output(model, genes, new_data_points):
-        X_new = np.array([[gene.evaluate(data) for gene in genes] for data in new_data_points])
-
-        predictions = model.predict(X_new)
-        return predictions
-
+                new_population[i] = mutate(new_population[i], terminals, max_depth,
+                                           max_mutation_growth=max_mutation_growth)
+        return new_population
     def readData(filepath):
         with open(filepath, 'r') as f:
             data, meta = arff.loadarff(f)
         # Convert the 'data' attribute to a NumPy array and decode byte strings
         return np.array([[element.decode() if isinstance(element, bytes) else element for element in row] for row in np.array(data)])
-
 
     fullData = readData("Rice_Cammeo_Osmancik.arff").tolist()
     random.shuffle(fullData)
@@ -246,14 +245,15 @@ def main(seed=7246325):
     genMaxs = []
     genMeds = []
     population = initialize_population(pop_size, num_genes, terminals, maxInitDepth)
+    population_with_fit_and_models = []
     for individual in population:
-        idv = individual
         fitness, model = multi_gene_fitness(individual,
                                             training_data_points)  # Ensure this should be multi_gene_fitness_torch if using GPU
+        population_with_fit_and_models.append([individual, fitness, model])
         genFitness.append(fitness)
         if fitness < best_fitness_global:
             best_fitness_global = fitness
-            best_individual_global = copy.deepcopy(idv)
+            best_individual_global = copy.deepcopy(individual)
             best_model_global = model
             best_index = population.index(individual)
     genAvgs.append(np.mean(genFitness))
@@ -264,13 +264,15 @@ def main(seed=7246325):
     print(f"Generation 0: Best Fitness = {best_fitness_global}")
     for gen in range(num_generations):
         genFitness = []
-        population = evolve_population(population, training_data_points, terminals, max_global_depth, mutation_rate, elitism_size,
+        population = evolve_population(population_with_fit_and_models, terminals, max_global_depth, mutation_rate, elitism_size,
                                        crossover_rate)
         index = 0
+        population_with_fit_and_models = []
         for individual in population:
             idv = individual
             fitness, model = multi_gene_fitness(individual,
                                                 training_data_points)  # Ensure this should be multi_gene_fitness_torch if using GPU
+            population_with_fit_and_models.append([idv, fitness, model])
             genFitness.append(fitness)
             if fitness < best_fitness_global:
                 best_fitness_global = fitness
@@ -295,27 +297,27 @@ def main(seed=7246325):
 
     print(
         f"Best individual found in {formatted_time} - Generation {best_generation} with Fitness = {best_fitness_global}, index = {best_index}")
-    # print(predict_output(best_model_global, best_individual_global, new_data_points))
-    return [genAvgs, genMins, genMaxs, genMeds], best_individual_global, best_model_global, testing_data_points
+    return [genAvgs, genMins, genMaxs, genMeds], best_individual_global, best_model_global, testing_data_points, best_fitness_global
 
 
 if __name__ == '__main__':
     random.seed(7246325)
     seeds = [random.randint(0, 100000000) for _ in range(10)]
-
     # Create a ProcessPoolExecutor
     with concurrent.futures.ProcessPoolExecutor() as executor:
         # Use map to execute main() function for each seed and maintain order
         all_results = list(executor.map(main, seeds))
     # Process or utilize the collected results as needed
+    #get index of best individual
+    best_fitness_index = [result[4] for result in all_results].index(min([result[4] for result in all_results]))
     accuracies = []
     for i in range(len(all_results)):
         print(f"Results for run {i+1}:")
         print(f"Stats (genAvg, genMin, genMax, genMed): {all_results[i][0]}")
-        print(f"y = {all_results[i][2].intercept_}")
+        print(f"prediction = {all_results[i][2].intercept_}")
         for gene, coef in zip(all_results[i][1], all_results[i][2].coef_):
-            print(f" - {-coef} * {gene}", end="") if coef < 0 else print(f" + {coef} * {gene}", end="")
-        print(f"Run {i+1} performance on testing data:")
+            print(f" - {-coef} * {gene}") if coef < 0 else print(f" + {coef} * {gene}")
+        print(f"\nRun {i+1} performance on testing data:")
         misses = 0
         for data in all_results[i][3]:
             prediction = all_results[i][2].predict([[gene.evaluate(data) for gene in all_results[i][1]]])
@@ -338,6 +340,10 @@ if __name__ == '__main__':
         grandMin.append(np.mean([result[0][1][gen] for result in all_results]))
         grandMax.append(np.mean([result[0][2][gen] for result in all_results]))
         grandMed.append(np.mean([result[0][3][gen] for result in all_results]))
+    print("Best individual:")
+    print(f"prediction = {all_results[np.argmax(accuracies)][2].intercept_}")
+    for gene, coef in zip(all_results[np.argmax(accuracies)][1], all_results[np.argmax(accuracies)][2].coef_):
+        print(f" - {-coef} * {gene}") if coef < 0 else print(f" + {coef} * {gene}")
     plt.plot(range(0, num_generations + 1), grandAvg, label='Average')
     plt.xlabel('Generation')
     plt.ylabel('Fitness')

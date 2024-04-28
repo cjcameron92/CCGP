@@ -57,37 +57,47 @@ def tournament_selection(population, ops, data_points, fitnessFunc, fitCheck, wo
             best_individual = individual
     return best_individual
 
+def tournament_selection2(population_with_fit_and_models, fitCheck, worstScore, tournament_size=3):
+    tournament = random.sample(population_with_fit_and_models, tournament_size)
+    best_fitness = worstScore
+    best_individual = None
+    for individual in tournament:
+        fitness = individual[1]
+        if fitCheck(fitness, best_fitness):
+            best_fitness = fitness
+            best_individual = individual
+    return best_individual[0]
 
-def evolve_population(population, data_points, terminals, arity, ops, max_depth, mutation_rate, elitism_size, crossover_rate, fitness_func, max_crossover_growth, max_mutation_growth, fitCheck, worstScore, fitnessType):
+def evolve_population(population, terminals, arity, ops, max_depth, mutation_rate, elitism_size, crossover_rate, fitness_func, max_crossover_growth, max_mutation_growth, fitCheck, worstScore, fitnessType):
     new_population = []
-
-    population_with_models = [(ind, fitness_func(ind, ops, data_points)[1]) for ind in population]
+    population_with_fit_and_models = population
 
     if fitnessType == "Minimize":
-        sorted_population_with_models = sorted(population_with_models, key=lambda x: fitness_func(x[0], ops, data_points)[0])
+        sorted_population_with_fit_and_models = sorted(population_with_fit_and_models, key=lambda x: x[1])
     else:
-        sorted_population_with_models = sorted(population_with_models, key=lambda x: fitness_func(x[0], ops, data_points)[0], reverse=True)
-    elites_with_models = sorted_population_with_models[:elitism_size]
+        sorted_population_with_fit_and_models = sorted(population_with_fit_and_models, key=lambda x: x[1], reverse=True)
+    elites_with_fit_and_models = sorted_population_with_fit_and_models[:elitism_size]
     elites = [copy.deepcopy(elite[0]) for elite in
-              elites_with_models]
+              elites_with_fit_and_models]
     new_population.extend(elites)
 
     while len(new_population) < len(population):
         if random.random() < crossover_rate:
-            parent1 = tournament_selection(population, ops, data_points, fitness_func, fitCheck, worstScore)
-            parent2 = tournament_selection(population, ops, data_points, fitness_func, fitCheck, worstScore)
+            parent1 = tournament_selection2(population_with_fit_and_models, fitCheck, worstScore)
+            parent2= tournament_selection2(population_with_fit_and_models, fitCheck, worstScore)
             offspring1, offspring2 = one_point_crossover(parent1, parent2, max_depth, max_crossover_growth)
             new_population.extend([offspring1, offspring2][:len(population) - len(new_population)])
         else:
-            individual = tournament_selection(population, ops, data_points, fitness_func, fitCheck, worstScore)
+            individual = tournament_selection2(population_with_fit_and_models, fitCheck, worstScore)
             new_population.append(individual)
 
     for i in range(len(new_population)):
         if random.random() < mutation_rate and i >= elitism_size:
             new_population[i] = mutate(new_population[i], terminals, arity, ops, max_depth, max_mutation_growth=max_mutation_growth)
 
-    new_population_with_models = [(ind, fitness_func(ind, ops, data_points)[1]) for ind in new_population]
-    return [ind[0] for ind in new_population_with_models]
+
+
+    return new_population
 
 
 class Node:
@@ -141,7 +151,7 @@ def lt(a, b):
     return a < b
 def gt(a, b):
     return a > b
-def main(seed, pop_size, num_genes, terminals, arity, ops,
+def runGP(seed, pop_size, num_genes, terminals, arity, ops,
          fitnessFunc, minInitDepth, maxInitDepth,
          max_global_depth, mutation_rate, max_mutation_growth, elitism_size,
          crossover_rate, max_crossover_growth, num_generations, data, fitnessType):
@@ -167,13 +177,14 @@ def main(seed, pop_size, num_genes, terminals, arity, ops,
     genMaxs = []
     genMeds = []
     population = initialize_population(pop_size, num_genes, terminals, arity, ops, minInitDepth, maxInitDepth)
+    population_with_fit_and_models = []
     for individual in population:
-        idv = individual
         fitness, model = fitnessFunc(individual, ops, data)  # Ensure this should be multi_gene_fitness_torch if using GPU
+        population_with_fit_and_models.append([individual, fitness, model])
         genFitness.append(fitness)
         if fitCheck(fitness, best_fitness_global):
             best_fitness_global = fitness
-            best_individual_global = copy.deepcopy(idv)
+            best_individual_global = copy.deepcopy(individual)
             best_model_global = model
             best_index = population.index(individual)
     genAvgs.append(np.mean(genFitness))
@@ -183,12 +194,14 @@ def main(seed, pop_size, num_genes, terminals, arity, ops,
     print(f"Generation 0: Best Fitness = {best_fitness_global}")
     for gen in range(num_generations):
         genFitness = []
-        population = evolve_population(population, data, terminals, arity, ops, max_global_depth, mutation_rate, elitism_size,
+        population = evolve_population(population_with_fit_and_models, terminals, arity, ops, max_global_depth, mutation_rate, elitism_size,
                                        crossover_rate, fitnessFunc, max_crossover_growth, max_mutation_growth, fitCheck, worstScore, fitnessType)
         index = 0
+        population_with_fit_and_models = []
         for individual in population:
             idv = individual
             fitness, model = fitnessFunc(individual, ops, data)  # Ensure this should be multi_gene_fitness_torch if using GPU
+            population_with_fit_and_models.append([idv, fitness, model])
             genFitness.append(fitness)
             if fitCheck(fitness, best_fitness_global):
                 best_fitness_global = fitness
@@ -213,5 +226,4 @@ def main(seed, pop_size, num_genes, terminals, arity, ops,
 
     print(
         f"Best individual found in {formatted_time} - Generation {best_generation} with Fitness = {best_fitness_global}, index = {best_index}")
-    # print(predict_output(best_model_global, best_individual_global, new_data_points))
     return [genAvgs, genMins, genMaxs, genMeds], best_individual_global, best_model_global

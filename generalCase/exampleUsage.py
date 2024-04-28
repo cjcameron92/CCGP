@@ -16,7 +16,7 @@ def protected_division(x, y):
         return 1
     return x / y
 def call_main(args):
-    return carvalhogp.main(*args)
+    return carvalhogp.runGP(*args)
 def multi_gene_fitness(individual, ops, data_points):
     X = np.array([[gene.evaluate(data, ops) for gene in individual] for data in data_points])
     y = np.array([data['actual'] for data in data_points])
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     crossover_rate = 0.9
     num_generations = 50
     elitism_size = 1
-    fitnessType = "Maximize"
+    fitnessType = "Minimize"
 
     #User Defined Language
     ops = {
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     #User Defined Data
     def target_function(x):
         return protected_division((math.sin(x) * math.cos(x)), (math.tan(x) + 1)) + (
-                x ** 3 - 2 * x ** 2 + 5 * x - 3) * math.sin(x)
+                x ** 3 - 2 * x ** 2 + 5 * x - 3) * math.sin(x) * 0.5
     def readData(filepath):
         with open(filepath, 'r') as f:
             dataset, meta = arff.loadarff(f)
