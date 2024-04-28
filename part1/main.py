@@ -64,7 +64,7 @@ creator.create("FitnessMin", base.Fitness, weights=(-1.0,)) #create a fitness cl
 creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin) #create an individual class with a fitness attribute
 
 toolbox = base.Toolbox()
-toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=1, max_=2) #register the expression generation function
+toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=3, max_=5) #register the expression generation function
 toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr) #register the individual generation function
 toolbox.register("population", tools.initRepeat, list, toolbox.individual) #register the population generation function
 toolbox.register("compile", gp.compile, pset=pset) #register the compilation function
@@ -109,8 +109,8 @@ toolbox.register("mate", gp.cxOnePoint) #register the crossover function
 toolbox.register("expr_mut", gp.genFull, min_=0, max_=2) #register the expression mutation function
 toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset) #register the mutation function
 
-toolbox.decorate("mate", gp.staticLimit(key=operator.attrgetter("height"), max_value=5)) #set the maximum height for crossover
-toolbox.decorate("mutate", gp.staticLimit(key=operator.attrgetter("height"), max_value=5)) #set the maximum height for mutation
+toolbox.decorate("mate", gp.staticLimit(key=operator.attrgetter("height"), max_value=17)) #set the maximum height for crossover
+toolbox.decorate("mutate", gp.staticLimit(key=operator.attrgetter("height"), max_value=17)) #set the maximum height for mutation
 
 def main(seed=7246325, mpb=0.2, cpb=0.9, n_gens=50, n_pop=300, elitism=True): #main function to run the GP
     random.seed(seed) #seed the random number generator
