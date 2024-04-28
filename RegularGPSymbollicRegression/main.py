@@ -52,11 +52,11 @@ pset.addPrimitive(operator.add, 2) #add the add operator
 pset.addPrimitive(operator.sub, 2) #add the subtract operator
 pset.addPrimitive(operator.mul, 2) #add the multiply operator
 pset.addPrimitive(protectedDiv, 2) #add the protected division operator
-pset.addPrimitive(operator.neg, 1) #add the negation operator
 #pset.addPrimitive(max, 2) #add the max operator (UNUSED)
 #pset.addPrimitive(min, 2) #add the min operator (UNUSED)
-#pset.addPrimitive(math.cos, 1) #add the cosine operator (UNUSED)
-#pset.addPrimitive(math.sin, 1) #add the sine operator (UNUSED)
+pset.addPrimitive(math.cos, 1) #add the cosine operator (UNUSED)
+pset.addPrimitive(math.sin, 1) #add the sine operator (UNUSED)
+pset.addPrimitive(math.tan, 1) #add the tangent operator (UNUSED)
 pset.addEphemeralConstant("rand101", partial(random.uniform, -1, 1)) #add a random constant between -1 and 1
 pset.renameArguments(ARG0='x') #rename the input to x
 
