@@ -8,11 +8,12 @@ pip install sklearn numpy matplotlib
 
 ## Define Problem Scope
 Determine what problem you're trying to solve and create a fitness function. 
-Below is an example for a basic regression model. We recommend sklearn LinearRegression to determine weights
+Below is an example for the evaluation of each gene in an individual on multiple datapoints, along with a basic regression model. We recommend sklearn LinearRegression to determine weights
 for each genes solution. 
-
+The fitness function must critically include three variables in its signature, and they should be expected in this order.
+The fitness function must also return the fitness and model in this order.
 ```python
-def multi_gene_fitness(individual, ops, data_points):
+def multi_gene_fitness(individual, operators, data_points):
     X = np.array([[gene.evaluate(data, ops) for gene in individual] for data in data_points])
     y = np.array([data['actual'] for data in data_points])
 
