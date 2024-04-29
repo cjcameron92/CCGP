@@ -24,13 +24,14 @@ def generate_tree(terminals, arity, ops, max_global_depth, min_depth, current_de
 
 
 def one_point_crossover(parent1, parent2, max_global_depth, max_crossover_growth):
-    offspring1 = []
-    offspring2 = []
-    for gene1, gene2 in zip(parent1, parent2):
-        crossover_point = random.randint(1, min(gene1.depth(), gene2.depth()))
-        new_gene1, new_gene2 = gene1.crossover(gene2, crossover_point, max_global_depth, max_crossover_growth)
-        offspring1.append(new_gene1)
-        offspring2.append(new_gene2)
+    gene1 = random.choice(parent1)
+    gene1Index = parent1.index(gene1)
+    gene2 = random.choice(parent2)
+    gene2Index = parent2.index(gene2)
+    crossover_point = random.randint(1, min(gene1.depth(), gene2.depth()))
+    new_gene1, new_gene2 = gene1.crossover(gene2, crossover_point, max_global_depth, max_crossover_growth)
+    offspring1 = parent1[:gene1Index] + [new_gene1] + parent1[gene1Index + 1:]
+    offspring2 = parent2[:gene2Index] + [new_gene2] + parent2[gene2Index + 1:]
     return offspring1, offspring2
 
 
@@ -42,8 +43,16 @@ def mutate(individual, terminals, arity, ops, max_global_depth, max_mutation_gro
     return mutated_individual
 
 
+def mutate2(individual, terminals, max_global_depth, max_mutation_growth):
+    mutated_individual = []
+    gene = random.choice(individual)
+    geneIndex = individual.index(gene)
+    mutated_gene = gene.mutate(terminals, max_global_depth, max_mutation_growth)
+    mutated_individual = individual[:geneIndex] + [mutated_gene] + individual[geneIndex + 1:]
+    return mutated_individual
+
 def initialize_population(pop_size, num_genes, terminals, arity, ops, min_depth, max_depth):
-    return [[generate_tree(terminals, arity, ops, max_depth, min_depth) for _ in range(num_genes)] for _ in range(pop_size)]
+    return [[generate_tree(terminals, arity, ops, max_depth, min_depth) for _ in range(random.randint(1, num_genes))] for _ in range(pop_size)]
 
 
 def tournament_selection(population, ops, data_points, fitnessFunc, fitCheck, worstScore, tournament_size=3):

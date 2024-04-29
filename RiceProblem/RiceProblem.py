@@ -124,20 +124,31 @@ def main(seed=7246325):
     np.random.seed(seed)
 
     def one_point_crossover(parent1, parent2, max_global_depth, max_crossover_growth):
-        offspring1 = []
-        offspring2 = []
-        for gene1, gene2 in zip(parent1, parent2):
-            crossover_point = random.randint(1, min(gene1.depth(), gene2.depth()))
-            new_gene1, new_gene2 = gene1.crossover(gene2, crossover_point, max_global_depth, max_crossover_growth)
-            offspring1.append(new_gene1)
-            offspring2.append(new_gene2)
+        gene1 = random.choice(parent1)
+        gene1Index = parent1.index(gene1)
+        gene2 = random.choice(parent2)
+        gene2Index = parent2.index(gene2)
+        crossover_point = random.randint(1, min(gene1.depth(), gene2.depth()))
+        new_gene1, new_gene2 = gene1.crossover(gene2, crossover_point, max_global_depth, max_crossover_growth)
+        offspring1 = parent1[:gene1Index] + [new_gene1] + parent1[gene1Index + 1:]
+        offspring2 = parent2[:gene2Index] + [new_gene2] + parent2[gene2Index + 1:]
         return offspring1, offspring2
 
+    #Mutates each gene
     def mutate(individual, terminals, max_global_depth, max_mutation_growth):
         mutated_individual = []
         for gene in individual:
             mutated_gene = gene.mutate(terminals, max_global_depth, max_mutation_growth)
             mutated_individual.append(mutated_gene)
+        return mutated_individual
+
+    #Mutates a gene
+    def mutate2(individual, terminals, max_global_depth, max_mutation_growth):
+        mutated_individual = []
+        gene = random.choice(individual)
+        geneIndex = individual.index(gene)
+        mutated_gene = gene.mutate(terminals, max_global_depth, max_mutation_growth)
+        mutated_individual = individual[:geneIndex] + [mutated_gene] + individual[geneIndex + 1:]
         return mutated_individual
 
     def multi_gene_fitness(individual, data_points):
@@ -162,18 +173,7 @@ def main(seed=7246325):
         return misses, model
 
     def initialize_population(pop_size, num_genes, terminals, max_depth):
-        return [[generate_tree(terminals, max_depth) for _ in range(num_genes)] for _ in range(pop_size)]
-
-    def tournament_selection(population, data_points, tournament_size=3):
-        tournament = random.sample(population, tournament_size)
-        best_fitness = float('inf')
-        best_individual = None
-        for individual in tournament:
-            fitness, _ = multi_gene_fitness(individual, data_points)
-            if fitness < best_fitness:
-                best_fitness = fitness
-                best_individual = individual
-        return best_individual
+        return [[generate_tree(terminals, max_depth) for _ in range(random.randint(1, num_genes))] for _ in range(pop_size)]
 
     def tournament_selection2(population_with_fit_and_models, tournament_size=3):
         tournament = random.sample(population_with_fit_and_models, tournament_size)
@@ -222,14 +222,12 @@ def main(seed=7246325):
     random.shuffle(fullData)
     #iterate through column 7 and change the class to 0 or 1
     for row in fullData:
-        if row[7] == 'Cammeo':
-            row[7] = 0
-        else:
-            row[7] = 1
+        row[7] = 0 if row[7] == 'Cammeo' else 1
     full_data_points = [{'Area': float(row[0]), 'Perimeter': float(row[1]), 'Major_Axis_Length': float(row[2]), 'Minor_Axis_Length': float(row[3]), 'Eccentricity': float(row[4]), 'Convex_Area': float(row[5]), 'Extent': float(row[6]), 'Class': float(row[7])} for row in fullData]
     #first450 of full is training
-    training_data_points = full_data_points[:450]
-    testing_data_points = full_data_points[450:]
+    dataSplit = 450
+    training_data_points = full_data_points[:dataSplit]
+    testing_data_points = full_data_points[dataSplit:]
 
 
     best_fitness_global = float('inf')

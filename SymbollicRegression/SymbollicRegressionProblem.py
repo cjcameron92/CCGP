@@ -120,13 +120,14 @@ def main(seed=7246325):
     np.random.seed(seed)
 
     def one_point_crossover(parent1, parent2, max_global_depth, max_crossover_growth):
-        offspring1 = []
-        offspring2 = []
-        for gene1, gene2 in zip(parent1, parent2):
-            crossover_point = random.randint(1, min(gene1.depth(), gene2.depth()))
-            new_gene1, new_gene2 = gene1.crossover(gene2, crossover_point, max_global_depth, max_crossover_growth)
-            offspring1.append(new_gene1)
-            offspring2.append(new_gene2)
+        gene1 = random.choice(parent1)
+        gene1Index = parent1.index(gene1)
+        gene2 = random.choice(parent2)
+        gene2Index = parent2.index(gene2)
+        crossover_point = random.randint(1, min(gene1.depth(), gene2.depth()))
+        new_gene1, new_gene2 = gene1.crossover(gene2, crossover_point, max_global_depth, max_crossover_growth)
+        offspring1 = parent1[:gene1Index] + [new_gene1] + parent1[gene1Index + 1:]
+        offspring2 = parent2[:gene2Index] + [new_gene2] + parent2[gene2Index + 1:]
         return offspring1, offspring2
 
     def mutate(individual, terminals, max_global_depth, max_mutation_growth):
@@ -150,7 +151,7 @@ def main(seed=7246325):
         return mse, model
 
     def initialize_population(pop_size, num_genes, terminals, max_depth):
-        return [[generate_tree(terminals, max_depth) for _ in range(num_genes)] for _ in range(pop_size)]
+        return [[generate_tree(terminals, max_depth) for _ in range(random.randint(1, num_genes))] for _ in range(pop_size)]
 
     def tournament_selection(population, data_points, tournament_size=3):
         tournament = random.sample(population, tournament_size)
@@ -163,36 +164,45 @@ def main(seed=7246325):
                 best_individual = individual
         return best_individual
 
-    def evolve_population(population, data_points, terminals, max_depth, mutation_rate, elitism_size, crossover_rate):
+    def tournament_selection2(population_with_fit_and_models, tournament_size=3):
+        tournament = random.sample(population_with_fit_and_models, tournament_size)
+        best_fitness = float('inf')
+        best_individual = None
+        for individual in tournament:
+            fitness = individual[1]
+            if fitness < best_fitness:
+                best_fitness = fitness
+                best_individual = individual
+        return best_individual[0]
+
+    def evolve_population(population, terminals, max_depth, mutation_rate, elitism_size, crossover_rate):
         new_population = []
 
-        population_with_models = [(ind, multi_gene_fitness(ind, data_points)[1]) for ind in population]
+        population_with_fit_and_models = population
 
-        sorted_population_with_models = sorted(population_with_models,
-                                               key=lambda x: multi_gene_fitness(x[0], data_points)[0])
+        sorted_population_with_fit_and_models = sorted(population_with_fit_and_models, key=lambda x: x[1])
 
-        elites_with_models = sorted_population_with_models[:elitism_size]
+        elites_with_fit_and_models = sorted_population_with_fit_and_models[:elitism_size]
         elites = [copy.deepcopy(elite[0]) for elite in
-                  elites_with_models]
+                  elites_with_fit_and_models]
         new_population.extend(elites)
 
         while len(new_population) < len(population):
             if random.random() < crossover_rate:
-                parent1 = tournament_selection(population, data_points)
-                parent2 = tournament_selection(population, data_points)
-                offspring1, offspring2 = one_point_crossover(parent1, parent2, max_global_depth, max_crossover_growth)
+                parent1 = tournament_selection2(population_with_fit_and_models)
+                parent2 = tournament_selection2(population_with_fit_and_models)
+                offspring1, offspring2 = one_point_crossover(parent1, parent2, max_depth, max_crossover_growth)
                 new_population.extend([offspring1, offspring2][:len(population) - len(new_population)])
             else:
-                individual = tournament_selection(population, data_points)
+                individual = tournament_selection2(population_with_fit_and_models)
                 new_population.append(individual)
 
         for i in range(len(new_population)):
             if random.random() < mutation_rate and i >= elitism_size:
-                new_population[i] = mutate(new_population[i], terminals, max_depth, max_mutation_growth=max_mutation_growth)
+                new_population[i] = mutate(new_population[i], terminals, max_depth,
+                                           max_mutation_growth=max_mutation_growth)
 
-        new_population_with_models = [(ind, multi_gene_fitness(ind, data_points)[1]) for ind in new_population]
-
-        return [ind[0] for ind in new_population_with_models]
+        return new_population
 
     def readData(filepath):
         with open(filepath, 'r') as f:
@@ -222,10 +232,12 @@ def main(seed=7246325):
     genMaxs = []
     genMeds = []
     population = initialize_population(pop_size, num_genes, terminals, maxInitDepth)
+    population_with_fit_and_models = []
     for individual in population:
         idv = individual
         fitness, model = multi_gene_fitness(individual,
                                             data_points)  # Ensure this should be multi_gene_fitness_torch if using GPU
+        population_with_fit_and_models.append([individual, fitness, model])
         genFitness.append(fitness)
         if fitness < best_fitness_global:
             best_fitness_global = fitness
@@ -240,13 +252,16 @@ def main(seed=7246325):
     print(f"Generation 0: Best Fitness = {best_fitness_global}")
     for gen in range(num_generations):
         genFitness = []
-        population = evolve_population(population, data_points, terminals, max_global_depth, mutation_rate, elitism_size,
+        population = evolve_population(population_with_fit_and_models, terminals, max_global_depth, mutation_rate,
+                                       elitism_size,
                                        crossover_rate)
         index = 0
+        population_with_fit_and_models = []
         for individual in population:
             idv = individual
             fitness, model = multi_gene_fitness(individual,
                                                 data_points)  # Ensure this should be multi_gene_fitness_torch if using GPU
+            population_with_fit_and_models.append([individual, fitness, model])
             genFitness.append(fitness)
             if fitness < best_fitness_global:
                 best_fitness_global = fitness
