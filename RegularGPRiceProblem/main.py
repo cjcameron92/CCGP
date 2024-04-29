@@ -69,7 +69,7 @@ toolbox = base.Toolbox() #create a toolbox for the genetic programming algorithm
 @param eph - the type of ephemeral constant to use
 @param elitism - whether or not to use elitism
 @return - the accuracy of the best individual, the fitness log, the best individual, the testing data, the testing answers, and the training accuracy'''
-def main(data_filepath='Rice_Cammeo_Osmancik.arff', pop_size=100, n_gen=40, seed=7246325, cpb=0.85, mpb=0.25, eph="int", elitism=True):
+def main(data_filepath='Rice_Cammeo_Osmancik.arff', pop_size=100, n_gen=50, seed=7246325, cpb=0.85, mpb=0.25, eph="int", elitism=True):
     pset = gp.PrimitiveSet("MAIN", 7) #create a primitive set with 7 input features
     pset.addPrimitive(operator.add, 2) #add the add operator
     pset.addPrimitive(operator.sub, 2) #add the subtract operator
@@ -91,7 +91,7 @@ def main(data_filepath='Rice_Cammeo_Osmancik.arff', pop_size=100, n_gen=40, seed
     pset.renameArguments(ARG4='Eccentricity')
     pset.renameArguments(ARG5='Convex_Area')
     pset.renameArguments(ARG6='Extent')
-    toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=3, max_=5) #register the expr function to generate a random tree
+    toolbox.register("expr", gp.genFull, pset=pset, min_=2, max_=3) #register the expr function to generate a random tree
     toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr) #register the individual function to create an individual with the expr function
     toolbox.register("population", tools.initRepeat, list, toolbox.individual) #register the population function to create a population of individuals
     toolbox.register("compile", gp.compile, pset=pset) #register the compile function to compile a tree into a callable function

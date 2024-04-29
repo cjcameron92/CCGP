@@ -1,12 +1,12 @@
 C:\Users\WhizKid2004\PycharmProjects\poliGPTTest\venv\Scripts\python.exe C:\Users\WhizKid2004\PycharmProjects\a1\part2\main.py
 Executing GP Runs Please Wait...
-Average Accuracy for parameter set 2 on training %87.75555555555555
-Best Accuracy for parameter set 2 on training %94.66666666666667
-Average Accuracy for parameter set 2 on testing %86.80059523809526
-Best Accuracy for parameter set 2 on testing %92.88690476190476
-Confusion Matrix for best expression on testing of parameter set 2: (True Osmancik, True Cammeo, False Osmancik, False Cammeo) (1821, 1300, 104, 135) expression: cos(log(((Major_Axis_Length-(-0.9639670394926341))-log((Major_Axis_Length-log((Major_Axis_Length-cos(sin(log(Minor_Axis_Length))))))))))
+Average Accuracy for parameter set 2 on training %89.57777777777777
+Best Accuracy for parameter set 2 on training %94.22222222222221
+Average Accuracy for parameter set 2 on testing %89.14583333333333
+Best Accuracy for parameter set 2 on testing %93.06547619047619
+Confusion Matrix for best expression on testing of parameter set 2: (True Osmancik, True Cammeo, False Osmancik, False Cammeo) (1810, 1317, 117, 116) expression: (Major_Axis_Length/log(cos(log(cos((log(Major_Axis_Length)/0.11586865878832175))))))
 
 
-Best Accuracy: %92.88690476190476 on seed 4837407 and expression: cos(log(((Major_Axis_Length-(-0.9639670394926341))-log((Major_Axis_Length-log((Major_Axis_Length-cos(sin(log(Minor_Axis_Length)))))))))) from experiment 2 (Run: 8)
+Best Accuracy: %93.06547619047619 on seed 2196969 and expression: (Major_Axis_Length/log(cos(log(cos((log(Major_Axis_Length)/0.11586865878832175)))))) from experiment 2 (Run: 4)
 
 Process finished with exit code 0
