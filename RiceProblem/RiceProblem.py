@@ -297,7 +297,7 @@ def main(seed=7246325):
 
     print(
         f"Best individual found in {formatted_time} - Generation {best_generation} with Fitness = {best_fitness_global}, index = {best_index}")
-    return [genAvgs, genMins, genMaxs, genMeds], best_individual_global, best_model_global, testing_data_points, best_fitness_global
+    return [genAvgs, genMins, genMaxs, genMeds], best_individual_global, best_model_global, testing_data_points, best_fitness_global, training_data_points
 
 
 if __name__ == '__main__':
@@ -319,7 +319,31 @@ if __name__ == '__main__':
             print(f" - {-coef} * {gene}") if coef < 0 else print(f" + {coef} * {gene}")
         print(f"\nRun {i+1} performance on testing data:")
         misses = 0
-        for data in all_results[i][3]:
+        trueCammeos = 0
+        trueOsmanciks = 0
+        falseCammeos = 0
+        falseOsmanciks = 0
+        for data in all_results[i][3]:#cammeo = 0 osmancik = 1
+            prediction = all_results[i][2].predict([[gene.evaluate(data) for gene in all_results[i][1]]])
+            if prediction < 0.5:
+                if data['Class'] == 1:
+                    misses += 1
+                    falseCammeos += 1
+                else:
+                    trueCammeos += 1
+            else:
+                if data['Class'] == 0:
+                    misses += 1
+                    falseOsmanciks += 1
+                else:
+                    trueOsmanciks += 1
+
+        print(f"Misses: {misses}, Accuracy: {(1 - (misses / len(all_results[i][3])))*100}%")
+        print(f"True Cammeos: {trueCammeos}, False Cammeos: {falseCammeos} True Osmanciks: {trueOsmanciks}, False Osmanciks: {falseOsmanciks}")
+        accuracies.append((1 - (misses / len(all_results[i][3])))*100)
+        print(f"Run {i+1} performance on training data:")
+        misses = 0
+        for data in all_results[i][5]:
             prediction = all_results[i][2].predict([[gene.evaluate(data) for gene in all_results[i][1]]])
             if prediction < 0.5:
                 if data['Class'] == 1:
@@ -327,8 +351,7 @@ if __name__ == '__main__':
             else:
                 if data['Class'] == 0:
                     misses += 1
-        print(f"Misses: {misses}, Accuracy: {(1 - (misses / len(all_results[i][3])))*100}%")
-        accuracies.append((1 - (misses / len(all_results[i][3])))*100)
+        print(f"Misses: {misses}, Accuracy: {(1 - (misses / len(all_results[i][5])))*100}%")
     print(f"Average accuracy: {np.mean(accuracies)}%")
     print(f"Highest accuracy: {np.max(accuracies)}%, on run {np.argmax(accuracies) + 1}")
     grandAvg = []
