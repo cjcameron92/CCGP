@@ -64,7 +64,7 @@ creator.create("FitnessMin", base.Fitness, weights=(-1.0,)) #create a fitness cl
 creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin) #create an individual class with a fitness attribute
 
 toolbox = base.Toolbox()
-toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=3, max_=5) #register the expression generation function
+toolbox.register("expr", gp.genFull, pset=pset, min_=3, max_=5) #register the expression generation function
 toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr) #register the individual generation function
 toolbox.register("population", tools.initRepeat, list, toolbox.individual) #register the population generation function
 toolbox.register("compile", gp.compile, pset=pset) #register the compilation function
@@ -106,7 +106,7 @@ def getHits(individual, points):
 toolbox.register("evaluate", evalSymbReg, points=[_ for _ in toEvaluate]) #register the evaluation function
 toolbox.register("select", tools.selTournament, tournsize=3) #register the selection function with tournament size 3
 toolbox.register("mate", gp.cxOnePoint) #register the crossover function
-toolbox.register("expr_mut", gp.genFull, min_=0, max_=2) #register the expression mutation function
+toolbox.register("expr_mut", gp.genFull, min_=2, max_=5) #register the expression mutation function
 toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset) #register the mutation function
 
 toolbox.decorate("mate", gp.staticLimit(key=operator.attrgetter("height"), max_value=17)) #set the maximum height for crossover
