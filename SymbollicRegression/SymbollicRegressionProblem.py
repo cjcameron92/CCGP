@@ -153,17 +153,6 @@ def main(seed=7246325):
     def initialize_population(pop_size, num_genes, terminals, max_depth):
         return [[generate_tree(terminals, max_depth) for _ in range(random.randint(1, num_genes))] for _ in range(pop_size)]
 
-    def tournament_selection(population, data_points, tournament_size=3):
-        tournament = random.sample(population, tournament_size)
-        best_fitness = float('inf')
-        best_individual = None
-        for individual in tournament:
-            fitness, _ = multi_gene_fitness(individual, data_points)
-            if fitness < best_fitness:
-                best_fitness = fitness
-                best_individual = individual
-        return best_individual
-
     def tournament_selection2(population_with_fit_and_models, tournament_size=3):
         tournament = random.sample(population_with_fit_and_models, tournament_size)
         best_fitness = float('inf')
