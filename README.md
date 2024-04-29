@@ -14,8 +14,8 @@ The fitness function must critically include three variables in its signature, a
 The fitness function must also return the fitness and model in this order.
 ```python
 def multi_gene_fitness(individual, operators, data_points):
-    X = np.array([[gene.evaluate(data, ops) for gene in individual] for data in data_points])
-    y = np.array([data['actual'] for data in data_points])
+    X = np.array([[gene.evaluate(point, operators) for gene in individual] for point in data_points])
+    y = np.array([data['actual'] for point in data_points])
 
     model = LinearRegression()
     model.fit(X, y)
