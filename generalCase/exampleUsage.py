@@ -96,6 +96,8 @@ if __name__ == '__main__':
         all_results = list(executor.map(call_main, [(seed,) + paramTuple for seed in seeds]))
 
     # Process or utilize the collected results as needed
+    bestIndex = -1
+    bestResult = float('inf')
     for result in all_results:
         print(f"Stats (genAvg, genMin, genMax, genMed): {result[0]}")
         print(f"y = {result[2].intercept_}")
@@ -105,6 +107,9 @@ if __name__ == '__main__':
             else:
                 print(f" + {coef}", end="")
             print(f" * {gene}")
+        if result[3] < bestResult:
+            bestResult = result[3]
+            bestIndex = all_results.index(result)
     # Plotting the average results
     grandAvg = []
     grandMin = []
@@ -140,3 +145,6 @@ if __name__ == '__main__':
     plt.legend()
     plt.savefig('plots/median_fitness_plot.png')
     plt.close()
+
+    print(f"Best Individual Fitness: {all_results[bestIndex][3]}, From run: {bestIndex+1}")
+    print("Average Best Individual Fitness: ", np.mean([result[3] for result in all_results]))

@@ -286,7 +286,7 @@ def main(seed=7246325):
 
     print(
         f"Best individual found in {formatted_time} - Generation {best_generation} with Fitness = {best_fitness_global}, index = {best_index}")
-    return [genAvgs, genMins, genMaxs, genMeds], best_individual_global, best_model_global
+    return [genAvgs, genMins, genMaxs, genMeds], best_individual_global, best_model_global, best_fitness_global
 
 
 if __name__ == '__main__':
@@ -298,6 +298,8 @@ if __name__ == '__main__':
         # Use map to execute main() function for each seed and maintain order
         all_results = list(executor.map(main, seeds))
     # Process or utilize the collected results as needed
+    bestIndex = -1
+    bestResult = float('inf')
     for result in all_results:
         print(f"Stats (genAvg, genMin, genMax, genMed): {result[0]}")
         print(f"y = {result[2].intercept_}")
@@ -307,6 +309,9 @@ if __name__ == '__main__':
             else:
                 print(f" + {coef}", end="")
             print(f" * {gene}")
+        if result[3] < bestResult:
+            bestResult = result[3]
+            bestIndex = all_results.index(result)
     # Plotting the average results
     grandAvg = []
     grandMin = []
@@ -342,3 +347,6 @@ if __name__ == '__main__':
     plt.legend()
     plt.savefig('plots/median_fitness_plot.png')
     plt.close()
+
+    print(f"Best Individual Fitness: {all_results[bestIndex][3]}, From run: {bestIndex+1}")
+    print(f"Average best fitness: {np.mean([result[3] for result in all_results])}")

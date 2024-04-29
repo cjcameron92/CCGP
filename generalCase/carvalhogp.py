@@ -235,4 +235,4 @@ def runGP(seed, pop_size, num_genes, terminals, arity, ops,
 
     print(
         f"Best individual found in {formatted_time} - Generation {best_generation} with Fitness = {best_fitness_global}, index = {best_index}")
-    return [genAvgs, genMins, genMaxs, genMeds], best_individual_global, best_model_global
+    return [genAvgs, genMins, genMaxs, genMeds], best_individual_global, best_model_global, best_fitness_global
