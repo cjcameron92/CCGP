@@ -147,7 +147,7 @@ def main(data_filepath='Rice_Cammeo_Osmancik.arff', pop_size=100, n_gen=40, seed
 
 
     toolbox.register("evaluate", evalRice, points=[_ for _ in trainingData]) #register the evaluate function to evaluate the individual on the training data
-    toolbox.register("select", tools.selTournament, tournsize=2) #register the select function to select individuals using tournament selection
+    toolbox.register("select", tools.selTournament, tournsize=3) #register the select function to select individuals using tournament selection
     toolbox.register("mate", gp.cxOnePoint) #register the mate function to perform one-point crossover
     toolbox.register("expr_mut", gp.genFull, min_=0, max_=2) #register the expr_mut function to generate a random tree for mutation
     toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset) #register the mutate function to perform uniform mutation
