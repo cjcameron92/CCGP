@@ -30,6 +30,11 @@ def multi_gene_fitness(individual, ops, data_points):
 Next step is to configure your settings for your terminals, operators, and parameters.
 Provided below is an example configuration for the basic regression model. 
 ```python
+import operator
+import random
+import math
+
+
 random.seed(7246325)
 pop_size = 300
 num_genes = 4
@@ -46,6 +51,12 @@ elitism_size = 1
 fitnessType = "Minimize"
 
 #User Defined Language
+def add(*args):
+    return sum(args)
+def protected_division(x, y):
+    if y == 0:
+        return 1
+    return x / y
 ops = {
   'add': add,
   'sub': operator.sub,
