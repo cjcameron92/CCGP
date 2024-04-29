@@ -8,8 +8,8 @@ pip install sklearn numpy matplotlib
 
 ## Define Problem Scope
 Determine what problem you're trying to solve and create a fitness function. 
-Below is an example for a basic regression model. We recommend sklearn LinearRegression to predict and distrubte weights
-for each genes solition. 
+Below is an example for a basic regression model. We recommend sklearn LinearRegression to determine weights
+for each genes solution. 
 
 ```python
 def multi_gene_fitness(individual, ops, data_points):
