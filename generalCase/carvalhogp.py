@@ -12,7 +12,7 @@ def terminal_or_ephemeral(terminals):
     else:
         return random.choice(terminals)
 
-
+# function to generate tree based on specified params
 def generate_tree(terminals, arity, ops, max_global_depth, min_depth, current_depth=0):
     if current_depth >= max_global_depth or (current_depth >= min_depth and random.random() < 0.5):
         return Node(terminal_or_ephemeral(terminals))
@@ -23,6 +23,7 @@ def generate_tree(terminals, arity, ops, max_global_depth, min_depth, current_de
         return Node(op, children)
 
 
+# function wrapper for one point crossover
 def one_point_crossover(parent1, parent2, max_global_depth, max_crossover_growth, terminals):
     gene1 = random.choice(parent1)
     gene2 = random.choice(parent2)
@@ -32,9 +33,11 @@ def one_point_crossover(parent1, parent2, max_global_depth, max_crossover_growth
     new_gene1, new_gene2 = gene1.crossover(gene2, crossover_point, max_global_depth, max_crossover_growth)
     offspring1 = parent1[:gene1Index] + [new_gene1] + parent1[gene1Index + 1:]
     offspring2 = parent2[:gene2Index] + [new_gene2] + parent2[gene2Index + 1:]
+    # returns 2 offspring post crossover
     return offspring1, offspring2
 
 
+# function wrapper for mutation, each gene gets mutated
 def mutate(individual, terminals, arity, ops, max_global_depth, max_mutation_growth):
     mutated_individual = []
     for gene in individual:
@@ -42,7 +45,7 @@ def mutate(individual, terminals, arity, ops, max_global_depth, max_mutation_gro
         mutated_individual.append(mutated_gene)
     return mutated_individual
 
-
+# function wrapper for mutation where only a gene and a random node gets mutated.
 def mutate2(individual, terminals, max_global_depth, max_mutation_growth):
     gene = random.choice(individual)
     geneIndex = individual.index(gene)
@@ -50,9 +53,11 @@ def mutate2(individual, terminals, max_global_depth, max_mutation_growth):
     mutated_individual = individual[:geneIndex] + [mutated_gene] + individual[geneIndex + 1:]
     return mutated_individual
 
+# function to initialize population
 def initialize_population(pop_size, num_genes, terminals, arity, ops, min_depth, max_depth):
     return [[generate_tree(terminals, arity, ops, max_depth, min_depth) for _ in range(random.randint(1, num_genes))] for _ in range(pop_size)]
 
+# function to preform tournament selection
 def tournament_selection2(population_with_fit_and_models, fitCheck, worstScore, tournament_size=3):
     tournament = random.sample(population_with_fit_and_models, tournament_size)
     best_fitness = worstScore
@@ -64,6 +69,7 @@ def tournament_selection2(population_with_fit_and_models, fitCheck, worstScore, 
             best_individual = individual
     return best_individual[0]
 
+# abstracted function to evolve population based on params
 def evolve_population(population, terminals, arity, ops, max_depth, mutation_rate, elitism_size, crossover_rate, fitness_func, max_crossover_growth, max_mutation_growth, fitCheck, worstScore, fitnessType):
     new_population = []
     population_with_fit_and_models = population
@@ -77,6 +83,7 @@ def evolve_population(population, terminals, arity, ops, max_depth, mutation_rat
               elites_with_fit_and_models]
     new_population.extend(elites)
 
+    # preforms crossover
     while len(new_population) < len(population):
         if random.random() < crossover_rate:
             parent1 = tournament_selection2(population_with_fit_and_models, fitCheck, worstScore)
@@ -88,6 +95,7 @@ def evolve_population(population, terminals, arity, ops, max_depth, mutation_rat
             new_population.append(individual)
 
     for i in range(len(new_population)):
+        # preform mutation
         if random.random() < mutation_rate and i >= elitism_size:
             new_population[i] = mutate(new_population[i], terminals, arity, ops, max_depth, max_mutation_growth=max_mutation_growth)
 
@@ -146,6 +154,8 @@ def lt(a, b):
     return a < b
 def gt(a, b):
     return a > b
+
+# function to run the gp that can be imported for ease of use
 def runGP(seed, pop_size, num_genes, terminals, arity, ops,
          fitnessFunc, minInitDepth, maxInitDepth,
          max_global_depth, mutation_rate, max_mutation_growth, elitism_size,

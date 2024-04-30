@@ -23,21 +23,25 @@ crossover_rate = 0.9
 num_generations = 50
 elitism_size = 1
 
+# function to add nums
 def add(*args):
     return sum(args)
 
+# function to divide using protected division (if denominator is 0 return 1)
 def protected_division(left, right):
     try:
         return left / right
     except ZeroDivisionError:
         return 1
 
+# function to preform logs, return 0 when x is less than or equal 0
 def protectedLog(x):
     if x <= 0:
         return 0
     else:
         return math.log(x)
 
+# operators
 ops = {
     'add': add,
     'sub': operator.sub,
@@ -47,6 +51,8 @@ ops = {
     'cos': math.cos,
     'log': protectedLog,
 }
+
+# arity definitions
 arity = {
     'add': 2,
     'sub': 2,
@@ -57,6 +63,7 @@ arity = {
     'log': 1,
 }
 
+# function to determine terminal or ephemeral (-1, 1)
 def terminal_or_ephemeral(terminals):
     total_options = len(terminals) + 1
     ephemeral_chance = 1 / total_options
@@ -64,6 +71,8 @@ def terminal_or_ephemeral(terminals):
         return random.uniform(-1, 1)
     else:
         return random.choice(terminals)
+
+# Function to generate tree based on params
 def generate_tree(terminals, max_global_depth, current_depth=0, min_depth=minInitDepth):
     if current_depth >= max_global_depth or (current_depth >= min_depth and random.random() < 0.5):
         return Node(terminal_or_ephemeral(terminals))
@@ -72,16 +81,19 @@ def generate_tree(terminals, max_global_depth, current_depth=0, min_depth=minIni
         ar = arity[op]
         children = [generate_tree(terminals, max_global_depth, current_depth + 1, min_depth) for _ in range(ar)]
         return Node(op, children)
+# Node class
 class Node:
     def __init__(self, value, children=None):
         self.value = value
         self.children = children if children else []
 
+    # returns depth as int
     def depth(self):
         if not self.children:
             return 1
         return 1 + max(child.depth() for child in self.children)
 
+    # function to preform the mutation by generating a subtree
     def mutate(self, terminals, max_global_depth, max_mutation_growth):
         if self.depth() >= max_global_depth - max_mutation_growth:
             return self  # Prevent depth exceeding max_global_depth after mutation
@@ -90,6 +102,7 @@ class Node:
         self.children = new_subtree.children
         return self
 
+    # function to preform crossover, swapping 2 nodes at fixed positions
     def crossover(self, other, point, max_global_depth, max_crossover_growth, current_depth=1):
         if current_depth >= max_global_depth - max_crossover_growth:
             return self, other  # Prevent depth exceeding max_global_depth after crossover
@@ -103,9 +116,11 @@ class Node:
                                                                                  current_depth + 1)
         return self, other
 
+    # function to provide a copy (fix aliasing)
     def copy(self):
         return Node(self.value, [child.copy() for child in self.children])
 
+    # function to return a value
     def evaluate(self, mapping):
         if self.value in ops:
             results = [child.evaluate(mapping) for child in self.children]
@@ -119,10 +134,13 @@ class Node:
         if self.children:
             return f"{self.value}({', '.join(str(child) for child in self.children)})"
         return str(self.value)
+
+# Main method  / define seed
 def main(seed=7246325):
     random.seed(seed)
     np.random.seed(seed)
 
+    # Wrapper for crossover function
     def one_point_crossover(parent1, parent2, max_global_depth, max_crossover_growth):
         gene1 = random.choice(parent1)
         gene1Index = parent1.index(gene1)
@@ -151,15 +169,19 @@ def main(seed=7246325):
         mutated_individual = individual[:geneIndex] + [mutated_gene] + individual[geneIndex + 1:]
         return mutated_individual
 
+    # fitness function
     def multi_gene_fitness(individual, data_points):
+        # store misses
         misses = 0
         X = []
         Y = []
+        # populate X and Y data
         for data in data_points:
             X.append([gene.evaluate(data) for gene in individual])
             Y.append(data['Class'])
         X = np.array(X)
         Y = np.array(Y)
+        # create and fit model
         model = LinearRegression()
         model.fit(X, Y)
         for i in range(len(X)):
@@ -172,9 +194,11 @@ def main(seed=7246325):
                     misses += 1
         return misses, model
 
+    # init population
     def initialize_population(pop_size, num_genes, terminals, max_depth):
         return [[generate_tree(terminals, max_depth) for _ in range(random.randint(1, num_genes))] for _ in range(pop_size)]
 
+    # preform tournament selection
     def tournament_selection2(population_with_fit_and_models, tournament_size=3):
         tournament = random.sample(population_with_fit_and_models, tournament_size)
         best_fitness = float('inf')
@@ -186,12 +210,15 @@ def main(seed=7246325):
                 best_individual = individual
         return best_individual[0]
 
+    # Abstracted method to evolve a population
     def evolve_population(population, terminals, max_depth, mutation_rate, elitism_size, crossover_rate):
         new_population = []
         population_with_fit_and_models = population
 
+        # sort
         sorted_population_with_fit_and_models = sorted(population_with_fit_and_models, key=lambda x: x[1])
 
+        # handle elitism
         elites_with_fit_and_models = sorted_population_with_fit_and_models[:elitism_size]
         elites = [copy.deepcopy(elite[0]) for elite in
                   elites_with_fit_and_models]
@@ -260,6 +287,7 @@ def main(seed=7246325):
     genMeds.append(np.median(genFitness))
 
     print(f"Generation 0: Best Fitness = {best_fitness_global}")
+    # Each generation run
     for gen in range(num_generations):
         genFitness = []
         population = evolve_population(population_with_fit_and_models, terminals, max_global_depth, mutation_rate, elitism_size,
@@ -296,10 +324,10 @@ def main(seed=7246325):
     print(
         f"Best individual found in {formatted_time} - Generation {best_generation} with Fitness = {best_fitness_global}, index = {best_index}")
     return [genAvgs, genMins, genMaxs, genMeds], best_individual_global, best_model_global, testing_data_points, best_fitness_global, training_data_points
-
-
+# main method
 if __name__ == '__main__':
     random.seed(7246325)
+    # set seed
     seeds = [random.randint(0, 100000000) for _ in range(10)]
     # Create a ProcessPoolExecutor
     with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -321,6 +349,7 @@ if __name__ == '__main__':
         trueOsmanciks = 0
         falseCammeos = 0
         falseOsmanciks = 0
+        # compute all results
         for data in all_results[i][3]:#cammeo = 0 osmancik = 1
             prediction = all_results[i][2].predict([[gene.evaluate(data) for gene in all_results[i][1]]])
             if prediction < 0.5:
