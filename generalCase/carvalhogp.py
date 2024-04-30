@@ -23,10 +23,10 @@ def generate_tree(terminals, arity, ops, max_global_depth, min_depth, current_de
         return Node(op, children)
 
 
-def one_point_crossover(parent1, parent2, max_global_depth, max_crossover_growth):
+def one_point_crossover(parent1, parent2, max_global_depth, max_crossover_growth, terminals):
     gene1 = random.choice(parent1)
-    gene1Index = parent1.index(gene1)
     gene2 = random.choice(parent2)
+    gene1Index = parent1.index(gene1)
     gene2Index = parent2.index(gene2)
     crossover_point = random.randint(1, min(gene1.depth(), gene2.depth()))
     new_gene1, new_gene2 = gene1.crossover(gene2, crossover_point, max_global_depth, max_crossover_growth)
@@ -44,7 +44,6 @@ def mutate(individual, terminals, arity, ops, max_global_depth, max_mutation_gro
 
 
 def mutate2(individual, terminals, max_global_depth, max_mutation_growth):
-    mutated_individual = []
     gene = random.choice(individual)
     geneIndex = individual.index(gene)
     mutated_gene = gene.mutate(terminals, max_global_depth, max_mutation_growth)
@@ -53,18 +52,6 @@ def mutate2(individual, terminals, max_global_depth, max_mutation_growth):
 
 def initialize_population(pop_size, num_genes, terminals, arity, ops, min_depth, max_depth):
     return [[generate_tree(terminals, arity, ops, max_depth, min_depth) for _ in range(random.randint(1, num_genes))] for _ in range(pop_size)]
-
-
-def tournament_selection(population, ops, data_points, fitnessFunc, fitCheck, worstScore, tournament_size=3):
-    tournament = random.sample(population, tournament_size)
-    best_fitness = worstScore
-    best_individual = None
-    for individual in tournament:
-        fitness, _ = fitnessFunc(individual, ops, data_points)
-        if fitCheck(fitness, best_fitness):
-            best_fitness = fitness
-            best_individual = individual
-    return best_individual
 
 def tournament_selection2(population_with_fit_and_models, fitCheck, worstScore, tournament_size=3):
     tournament = random.sample(population_with_fit_and_models, tournament_size)
@@ -94,7 +81,7 @@ def evolve_population(population, terminals, arity, ops, max_depth, mutation_rat
         if random.random() < crossover_rate:
             parent1 = tournament_selection2(population_with_fit_and_models, fitCheck, worstScore)
             parent2= tournament_selection2(population_with_fit_and_models, fitCheck, worstScore)
-            offspring1, offspring2 = one_point_crossover(parent1, parent2, max_depth, max_crossover_growth)
+            offspring1, offspring2 = one_point_crossover(parent1, parent2, max_depth, max_crossover_growth, terminals)
             new_population.extend([offspring1, offspring2][:len(population) - len(new_population)])
         else:
             individual = tournament_selection2(population_with_fit_and_models, fitCheck, worstScore)
@@ -139,7 +126,6 @@ class Node:
                                                                                  max_crossover_growth,
                                                                                  current_depth + 1)
         return self, other
-
     def copy(self):
         return Node(self.value, [child.copy() for child in self.children])
 
