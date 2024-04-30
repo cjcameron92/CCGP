@@ -10,6 +10,8 @@ import time
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('TkAgg')
+
+#Defining critical parameters
 pop_size = 300
 num_genes = 4
 terminals = ['x']
@@ -22,9 +24,6 @@ mutation_rate = 0.2
 crossover_rate = 0.9
 num_generations = 50
 elitism_size = 1
-
-
-#new_data_points = [{'x': -0.2}, {'x': 0.5}, {'x': 0.7}]
 
 # function to add nums
 def add(*args):
@@ -67,11 +66,11 @@ def terminal_or_ephemeral(terminals):
         return random.choice(terminals)
 # Function to generate tree based on params
 def generate_tree(terminals, max_global_depth, current_depth=0, min_depth=minInitDepth):
-    # base case (leaf node)
+    # randomly select terminal or ephemeral 50% of the time when specified depth is reached
     if current_depth >= max_global_depth or (current_depth >= min_depth and random.random() < 0.5):
         return Node(terminal_or_ephemeral(terminals))
     else:
-        # add more
+        # randomly select operator
         op = random.choice(list(ops.keys()))
         ar = arity[op]
         children = [generate_tree(terminals, max_global_depth, current_depth + 1, min_depth) for _ in range(ar)]
@@ -125,11 +124,12 @@ class Node:
         else:
             return self.value
 
+    # function to return a string representation
     def __str__(self):
         if self.children:
             return f"{self.value}({', '.join(str(child) for child in self.children)})"
         return str(self.value)
-# Main method  / define seed
+# Main method
 def main(seed=7246325):
     random.seed(seed)
     np.random.seed(seed)
@@ -157,7 +157,7 @@ def main(seed=7246325):
 
     # fitness function for SymbolicRegression
     def multi_gene_fitness(individual, data_points):
-        # define
+        #Evaluate the genes for each data point
         X = np.array([[gene.evaluate(data) for gene in individual] for data in data_points])
         y = np.array([data['actual'] for data in data_points])
 
@@ -168,21 +168,22 @@ def main(seed=7246325):
         # create predictions
         predictions = model.predict(X)
 
-        # create mse
+        # calculate mse
         mse = np.mean((predictions - y) ** 2)
 
         return mse, model
 
     # create an array for initial individual for fixed population size.
+    #each individual is a list of 1-num_genes genes
     def initialize_population(pop_size, num_genes, terminals, max_depth):
         return [[generate_tree(terminals, max_depth) for _ in range(random.randint(1, num_genes))] for _ in range(pop_size)]
 
     # tournament selection
     def tournament_selection2(population_with_fit_and_models, tournament_size=3):
-        tournament = random.sample(population_with_fit_and_models, tournament_size)
+        tournament = random.sample(population_with_fit_and_models, tournament_size)#randomly select individuals
         best_fitness = float('inf')
         best_individual = None
-        for individual in tournament:
+        for individual in tournament:#find the best fit
             fitness = individual[1]
             if fitness < best_fitness:
                 best_fitness = fitness
@@ -196,32 +197,32 @@ def main(seed=7246325):
 
         population_with_fit_and_models = population
 
-        # sort
+        # sort by most fit
         sorted_population_with_fit_and_models = sorted(population_with_fit_and_models, key=lambda x: x[1])
 
         # handle elites
         elites_with_fit_and_models = sorted_population_with_fit_and_models[:elitism_size]
         elites = [copy.deepcopy(elite[0]) for elite in
-                  elites_with_fit_and_models]
+                  elites_with_fit_and_models]#deepcopy to prevent aliasing
         new_population.extend(elites)
 
         # preform crossover and mutation
         while len(new_population) < len(population):
-            if random.random() < crossover_rate:
+            if random.random() < crossover_rate:#crossover
                 parent1 = tournament_selection2(population_with_fit_and_models)
                 parent2 = tournament_selection2(population_with_fit_and_models)
                 offspring1, offspring2 = one_point_crossover(parent1, parent2, max_depth, max_crossover_growth)
                 new_population.extend([offspring1, offspring2][:len(population) - len(new_population)])
-            else:
+            else:#direct copy
                 individual = tournament_selection2(population_with_fit_and_models)
                 new_population.append(individual)
 
         for i in range(len(new_population)):
-            if random.random() < mutation_rate and i >= elitism_size:
+            if random.random() < mutation_rate and i >= elitism_size:#mutation
                 new_population[i] = mutate(new_population[i], terminals, max_depth,
                                            max_mutation_growth=max_mutation_growth)
 
-        return new_population
+        return new_population#return new population
 
     def readData(filepath):
         with open(filepath, 'r') as f:
@@ -254,7 +255,7 @@ def main(seed=7246325):
     population = initialize_population(pop_size, num_genes, terminals, maxInitDepth)
     population_with_fit_and_models = []
 
-    for individual in population:
+    for individual in population:#evaluate fitness for each individual
         idv = individual
         fitness, model = multi_gene_fitness(individual,
                                             data_points) 
@@ -265,7 +266,7 @@ def main(seed=7246325):
             best_individual_global = copy.deepcopy(idv)
             best_model_global = model
             best_index = population.index(individual)
-    genAvgs.append(np.mean(genFitness))
+    genAvgs.append(np.mean(genFitness))#append fitness stats
     genMins.append(np.min(genFitness))
     genMaxs.append(np.max(genFitness))
     genMeds.append(np.median(genFitness))
@@ -274,13 +275,13 @@ def main(seed=7246325):
     # loop through all max generations
     for gen in range(num_generations):
         genFitness = []
-        # evolve population
+        # handle evolutionary step
         population = evolve_population(population_with_fit_and_models, terminals, max_global_depth, mutation_rate,
                                        elitism_size,
                                        crossover_rate)
         index = 0
         population_with_fit_and_models = []
-        for individual in population:
+        for individual in population:#evaluate fitness for each individual
             idv = individual
             fitness, model = multi_gene_fitness(individual,
                                                 data_points)
@@ -296,8 +297,8 @@ def main(seed=7246325):
         genAvgs.append(np.mean(genFitness))
         genMins.append(np.min(genFitness))
         genMaxs.append(np.max(genFitness))
-        genMeds.append(np.median(genFitness))
-        print(f"Generation {gen + 1}: Best Fitness = {best_fitness_global}")
+        genMeds.append(np.median(genFitness))#append fitness stats
+        print(f"Generation {gen + 1}: Best Fitness = {best_fitness_global}")#print best fitness for the generation
 
     end_time = time.time()
     time_elapsed = end_time - start_time
