@@ -257,7 +257,7 @@ def main(seed=7246325):
     for individual in population:
         idv = individual
         fitness, model = multi_gene_fitness(individual,
-                                            data_points)  # Ensure this should be multi_gene_fitness_torch if using GPU
+                                            data_points) 
         population_with_fit_and_models.append([individual, fitness, model])
         genFitness.append(fitness)
         if fitness < best_fitness_global:
@@ -283,7 +283,7 @@ def main(seed=7246325):
         for individual in population:
             idv = individual
             fitness, model = multi_gene_fitness(individual,
-                                                data_points)  # Ensure this should be multi_gene_fitness_torch if using GPU
+                                                data_points)
             population_with_fit_and_models.append([individual, fitness, model])
             genFitness.append(fitness)
             if fitness < best_fitness_global:
