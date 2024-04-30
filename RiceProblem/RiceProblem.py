@@ -350,7 +350,7 @@ if __name__ == '__main__':
         falseCammeos = 0
         falseOsmanciks = 0
         # compute all results
-        for data in all_results[i][3]:#cammeo = 0 osmancik = 1
+        for data in all_results[i][3]:#evaluate each data point on the testing data
             prediction = all_results[i][2].predict([[gene.evaluate(data) for gene in all_results[i][1]]])
             if prediction < 0.5:
                 if data['Class'] == 1:
@@ -370,7 +370,7 @@ if __name__ == '__main__':
         accuracies.append((1 - (misses / len(all_results[i][3])))*100)
         print(f"Run {i+1} performance on training data:")
         misses = 0
-        for data in all_results[i][5]:
+        for data in all_results[i][5]:#evaluate training data
             prediction = all_results[i][2].predict([[gene.evaluate(data) for gene in all_results[i][1]]])
             if prediction < 0.5:
                 if data['Class'] == 1:
