@@ -3,7 +3,7 @@
 ## Setup and Installation
 Create a python 3.9 or higher enviorment and install the following python packages onto the enviorment.
 ```python
-pip install sklearn numpy matplotlib
+pip install ccgp
 ```
 
 ## Define Problem Scope
