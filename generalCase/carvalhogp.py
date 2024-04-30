@@ -184,7 +184,7 @@ def runGP(seed, pop_size, num_genes, terminals, arity, ops,
     population = initialize_population(pop_size, num_genes, terminals, arity, ops, minInitDepth, maxInitDepth)
     population_with_fit_and_models = []
     for individual in population:
-        fitness, model = fitnessFunc(individual, ops, data)  # Ensure this should be multi_gene_fitness_torch if using GPU
+        fitness, model = fitnessFunc(individual, ops, data)
         population_with_fit_and_models.append([individual, fitness, model])
         genFitness.append(fitness)
         if fitCheck(fitness, best_fitness_global):
@@ -205,7 +205,7 @@ def runGP(seed, pop_size, num_genes, terminals, arity, ops,
         population_with_fit_and_models = []
         for individual in population:
             idv = individual
-            fitness, model = fitnessFunc(individual, ops, data)  # Ensure this should be multi_gene_fitness_torch if using GPU
+            fitness, model = fitnessFunc(individual, ops, data)
             population_with_fit_and_models.append([idv, fitness, model])
             genFitness.append(fitness)
             if fitCheck(fitness, best_fitness_global):
