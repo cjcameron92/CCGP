@@ -15,8 +15,12 @@ def protected_division(x, y):
     if y == 0:
         return 1
     return x / y
+
+#Function to call main (for concurrent.futures)
 def call_main(args):
     return carvalhogp.runGP(*args)
+
+#User Defined Fitness Function
 def multi_gene_fitness(individual, ops, data_points):
     X = np.array([[gene.evaluate(data, ops) for gene in individual] for data in data_points])
     y = np.array([data['actual'] for data in data_points])
@@ -30,6 +34,7 @@ def multi_gene_fitness(individual, ops, data_points):
 
     return mse, model
 
+#Required for windows multiprocessing
 if __name__ == '__main__':
     #User Defined Variables
     random.seed(7246325)

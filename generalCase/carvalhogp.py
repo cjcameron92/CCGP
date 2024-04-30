@@ -4,6 +4,8 @@ import copy
 import time
 
 #########SYSTEM#########
+
+# function to generate random terminal or ephemeral
 def terminal_or_ephemeral(terminals):
     total_options = len(terminals) + 1
     ephemeral_chance = 1 / total_options
@@ -45,7 +47,7 @@ def mutate(individual, terminals, arity, ops, max_global_depth, max_mutation_gro
         mutated_individual.append(mutated_gene)
     return mutated_individual
 
-# function wrapper for mutation where only a gene and a random node gets mutated.
+# function wrapper for mutation where only 1 gene gets mutated.
 def mutate2(individual, terminals, max_global_depth, max_mutation_growth):
     gene = random.choice(individual)
     geneIndex = individual.index(gene)
@@ -74,29 +76,28 @@ def evolve_population(population, terminals, arity, ops, max_depth, mutation_rat
     new_population = []
     population_with_fit_and_models = population
 
-    if fitnessType == "Minimize":
+    if fitnessType == "Minimize":# sort based on fitness
         sorted_population_with_fit_and_models = sorted(population_with_fit_and_models, key=lambda x: x[1])
     else:
         sorted_population_with_fit_and_models = sorted(population_with_fit_and_models, key=lambda x: x[1], reverse=True)
     elites_with_fit_and_models = sorted_population_with_fit_and_models[:elitism_size]
     elites = [copy.deepcopy(elite[0]) for elite in
-              elites_with_fit_and_models]
+              elites_with_fit_and_models]# copy the elites to new population, deepcopy to avoid aliasing
     new_population.extend(elites)
 
     # preforms crossover
-    while len(new_population) < len(population):
-        if random.random() < crossover_rate:
+    while len(new_population) < len(population): # fill the rest of the population
+        if random.random() < crossover_rate:# crossover
             parent1 = tournament_selection2(population_with_fit_and_models, fitCheck, worstScore)
             parent2= tournament_selection2(population_with_fit_and_models, fitCheck, worstScore)
             offspring1, offspring2 = one_point_crossover(parent1, parent2, max_depth, max_crossover_growth, terminals)
             new_population.extend([offspring1, offspring2][:len(population) - len(new_population)])
-        else:
+        else:# no crossover
             individual = tournament_selection2(population_with_fit_and_models, fitCheck, worstScore)
             new_population.append(individual)
 
     for i in range(len(new_population)):
-        # preform mutation
-        if random.random() < mutation_rate and i >= elitism_size:
+        if random.random() < mutation_rate and i >= elitism_size:# mutate
             new_population[i] = mutate(new_population[i], terminals, arity, ops, max_depth, max_mutation_growth=max_mutation_growth)
 
 
@@ -160,9 +161,9 @@ def runGP(seed, pop_size, num_genes, terminals, arity, ops,
          fitnessFunc, minInitDepth, maxInitDepth,
          max_global_depth, mutation_rate, max_mutation_growth, elitism_size,
          crossover_rate, max_crossover_growth, num_generations, data, fitnessType):
-    if fitnessType != "Minimize" and fitnessType != "Maximize":
+    if fitnessType != "Minimize" and fitnessType != "Maximize":# check if fitnessType is valid
         raise ValueError("fitnessType must be either 'Minimize' or 'Maximize'")
-    if fitnessType == "Minimize":
+    if fitnessType == "Minimize":#set the worst score and comparison function based on fitnessType
         fitCheck = lt
         worstScore = float('inf')
     else:
@@ -181,9 +182,9 @@ def runGP(seed, pop_size, num_genes, terminals, arity, ops,
     genMins = []
     genMaxs = []
     genMeds = []
-    population = initialize_population(pop_size, num_genes, terminals, arity, ops, minInitDepth, maxInitDepth)
+    population = initialize_population(pop_size, num_genes, terminals, arity, ops, minInitDepth, maxInitDepth)#initialize population
     population_with_fit_and_models = []
-    for individual in population:
+    for individual in population:#calculate fitness for each individual
         fitness, model = fitnessFunc(individual, ops, data)
         population_with_fit_and_models.append([individual, fitness, model])
         genFitness.append(fitness)
@@ -192,7 +193,7 @@ def runGP(seed, pop_size, num_genes, terminals, arity, ops,
             best_individual_global = copy.deepcopy(individual)
             best_model_global = model
             best_index = population.index(individual)
-    genAvgs.append(np.mean(genFitness))
+    genAvgs.append(np.mean(genFitness))#store stats for generation 0
     genMins.append(np.min(genFitness))
     genMaxs.append(np.max(genFitness))
     genMeds.append(np.median(genFitness))
@@ -201,9 +202,10 @@ def runGP(seed, pop_size, num_genes, terminals, arity, ops,
         genFitness = []
         population = evolve_population(population_with_fit_and_models, terminals, arity, ops, max_global_depth, mutation_rate, elitism_size,
                                        crossover_rate, fitnessFunc, max_crossover_growth, max_mutation_growth, fitCheck, worstScore, fitnessType)
+        #perform the evolutionary step
         index = 0
         population_with_fit_and_models = []
-        for individual in population:
+        for individual in population:#calculate fitness for each individual
             idv = individual
             fitness, model = fitnessFunc(individual, ops, data)
             population_with_fit_and_models.append([idv, fitness, model])
@@ -215,7 +217,7 @@ def runGP(seed, pop_size, num_genes, terminals, arity, ops,
                 best_generation = gen + 1
                 best_index = index
             index += 1
-        genAvgs.append(np.mean(genFitness))
+        genAvgs.append(np.mean(genFitness))#store stats for generation gen
         genMins.append(np.min(genFitness))
         genMaxs.append(np.max(genFitness))
         genMeds.append(np.median(genFitness))
