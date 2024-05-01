@@ -7,7 +7,7 @@ Python-based multi-gene genetic program designed to manipulate and analyze compl
 ## Table of Contents
 - [Installation](https://link-url-here.org)
 - [Docs](https://link-url-here.org)
-- [Examples](https://link-url-here.org](https://github.com/cjcameron92/CCGP/tree/main/examples)
+- [Examples](https://github.com/cjcameron92/CCGP/tree/main/examples)
 - [FAQ](https://link-url-here.org)
 
 ### Quickstart
