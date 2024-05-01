@@ -19,6 +19,7 @@ Setup Enviorment
 ```py
 from ccgp import runGP
 from sklearn.linear_model import LinearRegression
+import numpy as np
 
 random.seed(7246325)
 pop_size = 300
