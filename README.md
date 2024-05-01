@@ -6,9 +6,9 @@
 Python-based multi-gene genetic program designed to manipulate and analyze complex data.
 ## Table of Contents
 - [Installation](https://link-url-here.org)
-- [Docs](https://link-url-here.org)
+- [Docs][(hz(https://github.com/cjcameron92/CCGP/blob/main/docs/)
 - [Examples](https://github.com/cjcameron92/CCGP/tree/main/examples)
-- [FAQ](https://link-url-here.org)
+- [FAQ](https://github.com/cjcameron92/CCGP/blob/main/docs/faq.md)
 
 ### Quickstart
 Install python library
