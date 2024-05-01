@@ -18,6 +18,7 @@ pip install ccgp
 Setup Enviorment
 ```py
 from ccgp import runGP
+from sklearn.linear_model import LinearRegression
 
 random.seed(7246325)
 pop_size = 300
