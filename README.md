@@ -67,4 +67,4 @@ call_main(paramTuple)
 ---
 #### Contributors 
 - [Cameron Carvalho](https://github.com/cjcameron92)
-- [Cole Corrbett](https://github.com/)
+- [Cole Corbett]([https://github.com/](https://github.com/ccorbett0116))
