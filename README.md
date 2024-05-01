@@ -53,6 +53,20 @@ arity = {
     'cos': 1,
     'tan': 1,
 }
+
+def multi_gene_fitness(individual, ops, data_points):
+    X = np.array([[gene.evaluate(data, ops) for gene in individual] for data in data_points])
+    y = np.array([data['actual'] for data in data_points])
+
+    model = LinearRegression()
+    model.fit(X, y)
+
+    predictions = model.predict(X)
+
+    mse = np.mean((predictions - y) ** 2)
+
+    return mse, model
+
 seed = 1
 paramTuple = (seed, pop_size, num_genes, terminals, arity, ops, multi_gene_fitness,
     minInitDepth, maxInitDepth, max_global_depth, mutation_rate, max_mutation_growth,
