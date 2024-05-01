@@ -9,6 +9,7 @@ Python-based multi-gene genetic program designed to manipulate and analyze compl
 - [Docs](https://github.com/cjcameron92/CCGP/blob/main/docs/)
 - [Examples](https://github.com/cjcameron92/CCGP/tree/main/examples)
 - [FAQ](https://github.com/cjcameron92/CCGP/blob/main/docs/faq.md)
+- [Paper](https://github.com/cjcameron92/CCGP/blob/main/docs/COSC_4P82___Final_Project___MGGP.pdf) Read me
 
 ### Quickstart
 Install python library
